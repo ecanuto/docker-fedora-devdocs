@@ -19,20 +19,20 @@ RUN dnf update -y && \
         telepathy-glib-devel tracker-devel upower-devel libgudev-devel \
         udisks-devel
 
-RUN git clone https://github.com/ptomato/gobject-introspection -b wip/ptomato/devdocs --depth=1 /opt/gi
-RUN git clone https://github.com/ptomato/devdocs -b gir-redux --depth=1 /opt/devdocs
-
 # Get rvm in order to use the particular version of Ruby that Devdocs needs
+# bash -l starts a login shell which gets us into the rvm environment
 RUN curl -sSL https://rvm.io/mpapis.asc | gpg2 --import - && \
     curl -L https://get.rvm.io | bash -s stable && \
     /bin/bash -l -c "rvm requirements" && \
-    /bin/bash -l -c "rvm install 2.3.0" && \
+    /bin/bash -l -c "rvm install 2.4.1" && \
     /bin/bash -l -c "gem install bundler --no-ri --no-rdoc"
 
+RUN git clone https://github.com/ptomato/gobject-introspection -b wip/ptomato/devdocs322 --depth=1 /opt/gi
 WORKDIR /opt/gi
 RUN ./autogen.sh --enable-doctool && make install
 ENV G_IR_DOC_TOOL /usr/local/bin/g-ir-doc-tool
 
+RUN git clone https://github.com/ptomato/devdocs -b gnome --depth=1 /opt/devdocs
 WORKDIR /opt/devdocs
 RUN /bin/bash -l -c "bundle install"
 RUN /bin/bash -l -c "thor gir:generate_all /usr/share && \
@@ -50,7 +50,8 @@ RUN /bin/bash -l -c "thor gir:generate_all /usr/share && \
         polkitagent10 rsvg20 soup24 soupgnome24 telepathyglib012 tracker10 \
         trackercontrol10 trackerminer10 upowerglib10 vte290 webkit240 \
         webkit2webextension40 win3210 xfixes40 xft20 xlib20 xrandr13; \
-      do thor docs:generate \$docset --force; done"
+      do echo \$docset; thor docs:generate \$docset --force; done"
 
 EXPOSE 9292
 CMD /bin/bash -l -c "rackup -o 0.0.0.0"
+
